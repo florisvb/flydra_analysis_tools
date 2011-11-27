@@ -48,9 +48,9 @@ class Dataset:
         print 'using dynamic model: ', dyn_model
         print 'framerate: ', fps
         print 'loading data.... '
-
+        
         # load object id's and save as Trajectory instances
-        for obj_id in obj_ids:
+        for obj_id in use_obj_ids:
             print 'processing: ', obj_id
             try: 
                 print obj_id
@@ -63,22 +63,23 @@ class Dataset:
                 continue
 
             # couple object ID dictionary with trajectory objects
-            traj_id = str(obj_id) # this is not necessarily redundant with the obj_id, it allows for making a unique trajectory id when merging multiple datasets
+            trajec_id = str(obj_id) # this is not necessarily redundant with the obj_id, it allows for making a unique trajectory id when merging multiple datasets
             self.trajecs.setdefault(trajec_id, Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance))
         return
         
-    def del_trajec(key):
+    def del_trajec(self, key):
         del (self.trajecs[key])
     
-    def get_trajec(n=0):
-        key = self.trajecs.keys[n]
-        return
+    def get_trajec(self, n=0):
+        key = self.trajecs.keys()[n]
+        return self.trajecs[key]
 
 class Trajectory:
     def __init__(self, trajec_id, kalman_rows, info={}, fps=None, save_covariance=False):
         self.key = trajec_id
         self.info = info
-
+        self.fps = fps
+        
         """
         kalman rows =   [0] = obj_id
                         [1] = frame
