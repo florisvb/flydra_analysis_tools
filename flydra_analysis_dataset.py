@@ -64,7 +64,8 @@ class Dataset:
 
             # couple object ID dictionary with trajectory objects
             trajec_id = str(obj_id) # this is not necessarily redundant with the obj_id, it allows for making a unique trajectory id when merging multiple datasets
-            self.trajecs.setdefault(trajec_id, Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance))
+            tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance)
+            self.trajecs.setdefault(trajec_id, tmp)
         return
         
     def del_trajec(self, key):
@@ -74,7 +75,7 @@ class Dataset:
         key = self.trajecs.keys()[n]
         return self.trajecs[key]
 
-class Trajectory:
+class Trajectory(object):
     def __init__(self, trajec_id, kalman_rows, info={}, fps=None, save_covariance=False):
         self.key = trajec_id
         self.info = info

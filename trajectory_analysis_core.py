@@ -18,11 +18,13 @@ def calc_xy_distance_to_point(trajec, xy_point):
     trajec.xy_distance_to_point = np.zeros_like(trajec.speed)
     for i, d in enumerate(trajec.xy_distance_to_point):
         d = scipy.linalg.norm(trajec.positions[i,0:2] - xy_point)
+        trajec.xy_distance_to_point[i] = d
     
 def calc_z_distance_to_point(trajec, z_point):
     trajec.z_distance_to_point = np.zeros_like(trajec.speed)
     for i, d in enumerate(trajec.z_distance_to_point):
         d = scipy.linalg.norm(trajec.positions[i,2] - z_point)
+        trajec.z_distance_to_point[i] = d
         
 def calc_xy_distance_to_post(trajec, top_center, radius):
     calc_xy_distance_to_point(trajec, top_center[0:2])
