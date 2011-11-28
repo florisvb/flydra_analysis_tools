@@ -9,6 +9,12 @@ import numpy as np
 import pickle
 import sys
 
+try:
+    import flydra.a2.core_analysis as core_analysis
+    import flydra.analysis.result_utils as result_utils
+except:
+    print 'Need to install flydra if you want to load raw data!'
+    print 'For unpickling, however, flydra is not necessary'
 
 class Dataset:
 
@@ -20,12 +26,6 @@ class Dataset:
         # eg. info={"post_type": "black"}
         # save_covariance: set to True if you need access to the covariance data. Keep as False if this is not important for analysis (takes up lots of space)
         
-        try:
-            import flydra.a2.core_analysis as core_analysis
-            import flydra.analysis.result_utils as result_utils
-        except:
-            print('Need to install flydra, sorry!')
-
         # set up analyzer
         ca = core_analysis.get_global_CachingAnalyzer()
         (obj_ids, use_obj_ids, is_mat_file, data_file, extra) = ca.initial_file_load(filename)
@@ -202,6 +202,24 @@ def make_mini_dataset(dataset, nkeys = 500):
             break
     return new_dataset
     
+def count_flies(dataset, attr=None, val=None):
+    
+    print 'n flies: ', len(dataset.trajecs.keys())
+    
+    def count_for_attribute(a, v):
+        n = 0
+        for k, trajec in dataset.trajecs.iteritems():
+            test_val = trajec.__getattribute__(a)
+            if test_val == v:
+                n += 1
+        print a + ': ' + v + ': ' + str(n)
+        
+    if attr is not None:
+        if type(attr) is list:
+            for i, a in enumerate(attr):
+                count_for_attribute(a, val[i])
+        else:
+            count_for_attribute(attr, val)
     
 
 ###################################################################################################
