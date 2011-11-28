@@ -4,12 +4,6 @@
 # depends on flydra.analysis and flydra.a2 -- if these are not installed, point to the appropriate path
 
 # once you have this dataset class, the data no longer depends on flydra, and therefore, matplotlib 0.99
-
-try:
-    import flydra.a2.core_analysis as core_analysis
-    import flydra.analysis.result_utils as result_utils
-except:
-    print('Need to install flydra, sorry!')
     
 import numpy as np
 import pickle
@@ -25,6 +19,12 @@ class Dataset:
         # use info to pass information to trajectory instances as a dictionary. 
         # eg. info={"post_type": "black"}
         # save_covariance: set to True if you need access to the covariance data. Keep as False if this is not important for analysis (takes up lots of space)
+        
+        try:
+            import flydra.a2.core_analysis as core_analysis
+            import flydra.analysis.result_utils as result_utils
+        except:
+            print('Need to install flydra, sorry!')
 
         # set up analyzer
         ca = core_analysis.get_global_CachingAnalyzer()
@@ -184,8 +184,22 @@ def merge_datasets(dataset_list):
         for k, trajec in d.trajecs.iteritems():
             new_trajec_id = str(n) + '_' + k # make sure we use unique identifier
             trajec.key = new_trajec_id
-            dataset.set_default(new_trajec_id, trajec)
+            dataset.trajecs.setdefault(new_trajec_id, trajec)
+        n += 1
     return dataset
+    
+def make_mini_dataset(dataset, nkeys = 500):
+    # helpful if working with large datasets and you want a small one to test out code/plots
+    new_dataset = Dataset()
+    n = 0
+    for k, trajec in dataset.trajecs.iteritems():
+        n += 1
+        new_trajec_id = str(n) + '_' + k # make sure we use unique identifier
+        trajec.key = new_trajec_id
+        new_dataset.trajecs.setdefault(new_trajec_id, trajec)
+        if n >= nkeys:
+            break
+    return new_dataset
     
     
 
