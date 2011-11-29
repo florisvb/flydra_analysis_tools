@@ -8,6 +8,7 @@
 import numpy as np
 import pickle
 import sys
+import os
 
 try:
     import flydra.a2.core_analysis as core_analysis
@@ -49,6 +50,9 @@ class Dataset:
         print 'framerate: ', fps
         print 'loading data.... '
         
+        self.dynamic_model = dyn_model
+        self.fps = fps
+        
         # load object id's and save as Trajectory instances
         for obj_id in use_obj_ids:
             print 'processing: ', obj_id
@@ -66,6 +70,8 @@ class Dataset:
             trajec_id = str(obj_id) # this is not necessarily redundant with the obj_id, it allows for making a unique trajectory id when merging multiple datasets
             tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance)
             self.trajecs.setdefault(trajec_id, tmp)
+            
+        ca.close()
         return
         
     def del_trajec(self, key):
@@ -220,7 +226,56 @@ def count_flies(dataset, attr=None, val=None):
                 count_for_attribute(a, val[i])
         else:
             count_for_attribute(attr, val)
+
+def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True, savedataset=True, savename='merged_dataset', kalman_smoothing=True, dynamic_model=None, fps=None, info={}, save_covariance=False):
+    # if you get an error, try appending an '/' at the end of the path
+    # only looks at files that end in '.h5', assumes they are indeed .h5 files
+    # kalmanized=True will only load files that have a name like kalmanized.h5
+
+    cmd = 'ls ' + path
+    ls = os.popen(cmd).read()
+    all_filelist = ls.split('\n')
+    try:
+        all_filelist.remove('')
+    except:
+        pass
+        
+    filelist = []
+    for i, filename in enumerate(all_filelist):
+        if filename[-3:] != '.h5':
+            pass
+        else:
+            if kalmanized:
+                if filename[-13:] == 'kalmanized.h5':
+                    filelist.append(path + filename)
+            else:
+                if filename[-13:] == 'kalmanized.h5':
+                    pass
+                else:
+                    filelist.append(path + filename)
     
+    print
+    print 'loading files: '
+    for filename in filelist:
+        print filename
+    if print_filenames_only:
+        return
+        
+    dataset_list = []
+    
+    for filename in filelist:
+        dataset = Dataset()
+        dataset.load_data(filename, kalman_smoothing=kalman_smoothing, dynamic_model=dynamic_model, fps=fps, info=info, save_covariance=save_covariance)
+        dataset_list.append(dataset)
+    
+    merged_dataset = merge_datasets(dataset_list)
+    
+    if savedataset:
+        save(merged_dataset, savename)
+    
+    return merged_dataset
+        
+        
 
 ###################################################################################################
 # Example usage
@@ -232,10 +287,12 @@ def example_load_single_h5_file(filename):
     dataset = Dataset()
     dataset.load_data(filename, kalman_smoothing=True, save_covariance=False, info=info)
     print 'saving dataset...'
-    save(dataset, 'example_load_single_h5_file_pickled_dataset')
+    #save(dataset, 'example_load_single_h5_file_pickled_dataset')
 
-    for k, trajec in dataset.trajecs.iteritems():
-        print 'key: ', k, 'trajectory length: ', trajec.length, 'speed at end of trajec: ', trajec.speed[-1]
+    #for k, trajec in dataset.trajecs.iteritems():
+    #    print 'key: ', k, 'trajectory length: ', trajec.length, 'speed at end of trajec: ', trajec.speed[-1]
+
+    return dataset
 
 if __name__ == "__main__":
     pass
