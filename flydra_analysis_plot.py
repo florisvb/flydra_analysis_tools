@@ -4,18 +4,18 @@ import matplotlib.pyplot as plt
 from matplotlib import patches
 import trajectory_analysis_specific as tas
 
-def example_xy_spagetti(dataset):
+def example_xy_spagetti(dataset, keys=None, show_saccades=True):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_ylim(-.15,.15)
     ax.set_xlim(-.25, .25)
     ax.set_autoscale_on(False)
     
-    xy_spagetti(ax, dataset, keys=None, nkeys=300, show_saccades=False, keys_to_highlight=[], colormap=None, color='gray')
+    xy_spagetti(ax, dataset, keys=keys, nkeys=300, show_saccades=show_saccades, keys_to_highlight=[], colormap=None, color='gray')
     prep_xy_spagetti_for_saving(ax)
     fig.savefig('example_xy_spagetti_plot.pdf', format='pdf')
 
-def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=False, keys_to_highlight=[], colormap=None, color='gray'):
+def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=False, keys_to_highlight=[], colormap=None, color='gray', show_start=True):
     if keys is None:
         keys = dataset.trajecs.keys()
     if nkeys < len(keys):
@@ -49,10 +49,13 @@ def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=Fa
                 for sac_range in trajec.sac_ranges:
                     if sac_range[0] < trajec.frame_nearest_to_post:
                     #if 1:
-                        ax.plot(trajec.positions[sac_range,0], trajec.positions[sac_range,1], '-', color='red', alpha=alpha2, linewidth=linewidth, zorder=zorder+1)
-                        sac = patches.Circle( (trajec.positions[sac_range[0],0], trajec.positions[sac_range[0],1]), radius=0.001, facecolor='red', edgecolor='none', alpha=alpha2, zorder=zorder+1)
-                        ax.add_artist(sac)
+                        ax.plot(trajec.positions[sac_range,0], trajec.positions[sac_range,1], '-', color='red', alpha=1, linewidth=linewidth, zorder=zorder+1)
+                        #sac = patches.Circle( (trajec.positions[sac_range[0],0], trajec.positions[sac_range[0],1]), radius=0.001, facecolor='red', edgecolor='none', alpha=alpha2, zorder=zorder+1)
+                        #ax.add_artist(sac)
             
+        if show_start:
+            start = patches.Circle( (trajec.positions[frames[0],0], trajec.positions[frames[0],1]), radius=0.002, facecolor='green', edgecolor='none', linewidth=0, alpha=1, zorder=zorder+1)
+            ax.add_artist(start)
     
     
     

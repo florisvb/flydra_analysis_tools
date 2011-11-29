@@ -36,8 +36,11 @@ def calc_xy_distance_to_post(trajec, top_center, radius):
 ########################################################################################################
         
 def calc_heading(trajec):
-    trajec.heading = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,1], trajec.velocities[:,0]), 3)
+    trajec.__setattr__('heading', floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,1], trajec.velocities[:,0]), 3) )
     ## kalman
+    
+    print trajec.length
+    
     data = trajec.heading.reshape([len(trajec.heading),1])
     ss = 3 # state size
     os = 1 # observation size
