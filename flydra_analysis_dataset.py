@@ -226,6 +226,20 @@ def count_flies(dataset, attr=None, val=None):
                 count_for_attribute(a, val[i])
         else:
             count_for_attribute(attr, val)
+            
+def load_single_h5(filename, save_as=None, save_dataset=True, return_dataset=True, kalman_smoothing=True, save_covariance=False, info={}):
+    # filename should be a .h5 file
+    if save_as is None:
+        save_as = 'dataset_' + filename.split('/')[-1]
+    dataset = Dataset()
+    dataset.load_data(filename, kalman_smoothing=True, save_covariance=False, info=info)
+    
+    if save_dataset:
+        print 'saving dataset...'
+        save(dataset, save_as)
+
+    if return_dataset:
+        return dataset
 
 def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True, savedataset=True, savename='merged_dataset', kalman_smoothing=True, dynamic_model=None, fps=None, info={}, save_covariance=False):
     # if you get an error, try appending an '/' at the end of the path
@@ -275,6 +289,18 @@ def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True,
     
     return merged_dataset
         
+def get_keys_with_attr(dataset, attr, val):
+    keys = []
+    for k, trajec in dataset.trajecs.iteritems():
+        if trajec.__getattribute__(attr) == val:
+            keys.append(k)
+    return keys
+    
+def get_trajec_with_attr(dataset, attr, val, n=0):
+    keys = get_keys_with_attr(dataset, attr, val)
+    if n > len(keys):
+        n = -1
+    return dataset.trajecs[keys[n]]
         
 
 ###################################################################################################
