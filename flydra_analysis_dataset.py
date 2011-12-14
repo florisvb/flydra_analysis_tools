@@ -82,8 +82,12 @@ class Dataset:
         return self.trajecs[key]
 
 class Trajectory(object):
-    def __init__(self, trajec_id, kalman_rows, info={}, fps=None, save_covariance=False):
+    def __init__(self, trajec_id, kalman_rows=None, info={}, fps=None, save_covariance=False):
         self.key = trajec_id
+        
+        if kalman_rows is None:
+            return
+        
         self.info = info
         self.fps = fps
         
@@ -191,7 +195,18 @@ def merge_datasets(dataset_list):
         for k, trajec in d.trajecs.iteritems():
             new_trajec_id = str(n) + '_' + k # make sure we use unique identifier
             trajec.key = new_trajec_id
-            dataset.trajecs.setdefault(new_trajec_id, trajec)
+            
+            # backwards compatibility stuff: NOTE: not fully backwards compatible! (laziness)
+            if type(trajec) is not Trajectory:
+                new_trajec = Trajectory(new_trajec_id)
+                new_trajec.positions = trajec.positions
+                new_trajec.velocities = trajec.velocities
+                new_trajec.speed = trajec.speed
+                new_trajec.length = len(trajec.speed)
+                new_trajec.fps = trajec.fps
+                dataset.trajecs.setdefault(new_trajec_id, new_trajec)
+            else:
+                dataset.trajecs.setdefault(new_trajec_id, trajec)
         n += 1
     return dataset
     
@@ -276,12 +291,16 @@ def load_all_h5s_in_directory(path, print_filenames_only=False, kalmanized=True,
         return
         
     dataset_list = []
-    
+        
+    n = 0
     for filename in filelist:
+        n += 1
         dataset = Dataset()
         dataset.load_data(filename, kalman_smoothing=kalman_smoothing, dynamic_model=dynamic_model, fps=fps, info=info, save_covariance=save_covariance)
+        tmpname = 'dataset_tmp_' + str(n)
+        save(dataset, tmpname)
         dataset_list.append(dataset)
-    
+        
     merged_dataset = merge_datasets(dataset_list)
     
     if savedataset:
@@ -301,7 +320,21 @@ def get_trajec_with_attr(dataset, attr, val, n=0):
     if n > len(keys):
         n = -1
     return dataset.trajecs[keys[n]]
+    
+def set_attribute_for_trajecs(dataset, attr, val, keys=None):
+    if keys is None:
+        keys = dataset.trajecs.keys()
+    
+    for key in keys:
+        trajec = dataset.trajecs[key]
+        trajec.__setattr__(attr, val)
         
+def make_dataset_with_attribute_filter(dataset, attr, val):
+    new_dataset = Dataset()
+    keys = get_keys_with_attr(dataset, attr, val)
+    for key in keys:
+        new_dataset.trajecs.setdefault(key, dataset.trajecs[key])
+    return new_dataset        
 
 ###################################################################################################
 # Example usage

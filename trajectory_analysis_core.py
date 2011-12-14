@@ -36,12 +36,10 @@ def calc_xy_distance_to_post(trajec, top_center, radius):
 ########################################################################################################
         
 def calc_heading(trajec):
-    trajec.__setattr__('heading', floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,1], trajec.velocities[:,0]), 3) )
+    trajec.heading_norollover = floris_math.remove_angular_rollover(np.arctan2(trajec.velocities[:,1], trajec.velocities[:,0]), 3)
     ## kalman
     
-    print trajec.length
-    
-    data = trajec.heading.reshape([len(trajec.heading),1])
+    data = trajec.heading_norollover.reshape([len(trajec.heading_norollover),1])
     ss = 3 # state size
     os = 1 # observation size
     F = np.array([   [1,1,0], # process update
@@ -60,8 +58,11 @@ def calc_heading(trajec):
     initv = 0*np.eye(ss)
     xsmooth,Vsmooth = kalman_math.kalman_smoother(data, F, H, Q, R, initx, initv, plot=False)
 
-    trajec.heading_smooth = xsmooth[:,0]
+    trajec.heading_norollover_smooth = xsmooth[:,0]
     trajec.heading_smooth_diff = xsmooth[:,1]*trajec.fps
+    
+    trajec.heading = floris_math.fix_angular_rollover(trajec.heading_norollover)
+    trajec.heading_smooth = floris_math.fix_angular_rollover(trajec.heading_norollover_smooth)
     #trajec.heading_smooth_diff2 = xsmooth[:,2]
     
 ########################################################################################################
@@ -87,13 +88,13 @@ def get_angle_of_saccade(trajec, sac_range, method='integral', smoothed=True):
          
         signed_angleofsaccade = -1*angleofsaccade*sign_of_angle_of_saccade
         
-        return signed_angleofsaccade
+        return floris_math.fix_angular_rollover(signed_angleofsaccade)
     
     else:
         if smoothed is False:
-            return np.sum(trajec.heading_smooth_diff[sac_range]/100.)*-1
+            return floris_math.fix_angular_rollover(np.sum(trajec.heading_smooth_diff[sac_range]/100.)*-1)
         else:
-            return np.sum( floris_math.diffa(trajec.heading)[sac_range])*-1
+            return floris_math.fix_angular_rollover(np.sum( floris_math.diffa(trajec.heading)[sac_range])*-1)
             
         
 def calc_saccades(trajec, threshold_lo=300, threshold_hi=100000000, min_angle=10, plot=False):

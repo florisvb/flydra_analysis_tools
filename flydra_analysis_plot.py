@@ -12,12 +12,20 @@ def example_xy_spagetti(dataset, keys=None, show_saccades=True):
     ax.set_autoscale_on(False)
     
     xy_spagetti(ax, dataset, keys=keys, nkeys=300, show_saccades=show_saccades, keys_to_highlight=[], colormap=None, color='gray')
+    
+    post = patches.Circle( (0, 0), radius=0.009565, facecolor='black', edgecolor='none', alpha=1)
+    ax.add_artist(post)
+    
     prep_xy_spagetti_for_saving(ax)
     fig.savefig('example_xy_spagetti_plot.pdf', format='pdf')
 
 def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=False, keys_to_highlight=[], colormap=None, color='gray', show_start=True):
     if keys is None:
         keys = dataset.trajecs.keys()
+    else:
+        if type(keys) is not list:
+            keys = [keys]
+            
     if nkeys < len(keys):
         last_key = np.min([len(keys), start_key+nkeys])
         keys = keys[start_key:last_key]
@@ -26,12 +34,19 @@ def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=Fa
     for key in keys:
         trajec = dataset.trajecs[key]    
         
-        
+        '''
         frame1 = tas.get_frame_at_distance(trajec, 0.2)
         if trajec.frame_nearest_to_post <= frame1 or trajec.frame_nearest_to_post is None: 
             continue
         print key, trajec.xy_distance_to_post[frame1], trajec.xy_distance_to_post[trajec.frame_nearest_to_post]
-        frames = np.arange(trajec.framerange[0], trajec.framerange[1])
+        try:
+            frames = np.arange(trajec.framerange[0], trajec.framerange[1])
+        except:
+            frames = np.arange(0, trajec.length)
+        '''
+        
+        frames = np.arange(trajec.framerange[0], trajec.frame_of_analysis_finished)
+        print trajec.framerange, trajec.frame_of_analysis_finished, trajec.frame_of_landing, trajec.frame_nearest_to_post
         
         if key in keys_to_highlight:
             alpha = 1
@@ -47,7 +62,8 @@ def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=Fa
         if show_saccades:
             if len(trajec.sac_ranges) > 0:
                 for sac_range in trajec.sac_ranges:
-                    if sac_range[0] < trajec.frame_nearest_to_post:
+                    angle_subtended = trajec.angle_subtended_by_post[sac_range[0]]
+                    if sac_range[0] in frames and angle_subtended < 100.*np.pi/180.:
                     #if 1:
                         ax.plot(trajec.positions[sac_range,0], trajec.positions[sac_range,1], '-', color='red', alpha=1, linewidth=linewidth, zorder=zorder+1)
                         #sac = patches.Circle( (trajec.positions[sac_range[0],0], trajec.positions[sac_range[0],1]), radius=0.001, facecolor='red', edgecolor='none', alpha=alpha2, zorder=zorder+1)
@@ -56,17 +72,6 @@ def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=Fa
         if show_start:
             start = patches.Circle( (trajec.positions[frames[0],0], trajec.positions[frames[0],1]), radius=0.002, facecolor='green', edgecolor='none', linewidth=0, alpha=1, zorder=zorder+1)
             ax.add_artist(start)
-    
-    
-    
-    
-    post = patches.Circle( (0, 0), radius=0.009565, facecolor='black', edgecolor='none', alpha=1)
-    ax.add_artist(post)
-    #ax.text(0,0,'post\ntop view', horizontalalignment='center', verticalalignment='center')
-    
-    
-    #post = patches.Circle( (0, 0), radius=0.028, facecolor='none', edgecolor='red', alpha=1, linewidth=0.15, linestyle='dashed')
-    #ax.add_artist(post)
     
     
 def prep_xy_spagetti_for_saving(ax):
