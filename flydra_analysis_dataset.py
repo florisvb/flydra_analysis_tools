@@ -22,6 +22,11 @@ class Dataset:
     def __init__(self):
         self.trajecs = {}
 	
+    def test(self, filename, kalman_smoothing=False, dynamic_model=None, fps=None, info={}, save_covariance=False):
+        ca = core_analysis.get_global_CachingAnalyzer()
+        (obj_ids, use_obj_ids, is_mat_file, data_file, extra) = ca.initial_file_load(filename)
+        return ca, obj_ids, use_obj_ids, is_mat_file, data_file, extra
+
     def load_data(self, filename, kalman_smoothing=False, dynamic_model=None, fps=None, info={}, save_covariance=False):
         # use info to pass information to trajectory instances as a dictionary. 
         # eg. info={"post_type": "black"}
@@ -30,6 +35,7 @@ class Dataset:
         # set up analyzer
         ca = core_analysis.get_global_CachingAnalyzer()
         (obj_ids, use_obj_ids, is_mat_file, data_file, extra) = ca.initial_file_load(filename)
+        data_file.flush()
 
         # data set defaults
         if fps is None:
@@ -56,13 +62,13 @@ class Dataset:
         # load object id's and save as Trajectory instances
         for obj_id in use_obj_ids:
             print 'processing: ', obj_id
-            try: 
+            if 1: #try: 
                 print obj_id
                 kalman_rows = ca.load_data( obj_id, data_file,
                                  dynamic_model_name = dyn_model,
                                  use_kalman_smoothing= kalman_smoothing,
                                  frames_per_second= fps)
-            except:
+            else: #except:
                 print 'object id failed to load (probably no data): ', obj_id
                 continue
 
@@ -71,7 +77,6 @@ class Dataset:
             tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance)
             self.trajecs.setdefault(trajec_id, tmp)
             
-        ca.close()
         return
         
     def del_trajec(self, key):
@@ -118,6 +123,9 @@ class Trajectory(object):
         self.first_frame = int(kalman_rows[0][1])
         self.fps = float(fps)
         self.length = len(kalman_rows)
+
+	#print 'time'
+	#print extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
 		
         try:
             self.timestamp = time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
@@ -188,7 +196,7 @@ def iterate_calc_function(dataset, function, keys=None, *args, **kwargs):
         function(trajec, *args, **kwargs)
         
 def merge_datasets(dataset_list):
-    # dataset_list should be a dataset
+    # dataset_list should be a list of datasets
     dataset = Dataset()
     n = 0
     for d in dataset_list:
