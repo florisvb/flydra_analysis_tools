@@ -6,7 +6,21 @@ import kalman_math
 import numpyimgproc as nim
 import matplotlib.pyplot as plt
 from matplotlib import patches
+import flydra_analysis_dataset as fad
+    
 
+########################################################################################################
+# Culling
+########################################################################################################
+
+def mark_for_culling_based_on_min_frames(trajec, min_length_frames=10):
+    if  trajec.length < min_length_frames:
+        trajec.cull = True
+
+def mark_for_culling_based_on_cartesian_position(trajec, ok_range, axis=0):
+    if np.max(trajec.positions[:,axis]) > np.max(ok_range) or np.min(trajec.positions[:,axis]) < np.min(ok_range):
+        trajec.cull = True
+         
 
 ########################################################################################################
 # Distance to point / post

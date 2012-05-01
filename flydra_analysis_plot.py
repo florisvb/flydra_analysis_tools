@@ -2,24 +2,54 @@ import floris_plot_lib as fpl
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
-import trajectory_analysis_specific as tas
 
-def example_xy_spagetti(dataset, keys=None, show_saccades=True):
+def example_cartesian_spagetti(dataset, axis='xy', xlim=(-.15, .15), ylim=(-.25, .25), zlim=(-.15, -.15), keys=None, keys_to_highlight=[], show_saccades=False, colormap='jet', color_attribute=None, artists=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.set_ylim(-.15,.15)
-    ax.set_xlim(-.25, .25)
-    ax.set_autoscale_on(False)
+
+    if axis=='xy': # xy plane
+        ax.set_ylim(ylim[0], ylim[1])
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.set_autoscale_on(False)
+        ax.set_aspect('equal')
+        axes=[0,1]
+        xy_spagetti(ax, dataset, keys=keys, nkeys=300, show_saccades=show_saccades, keys_to_highlight=keys_to_highlight, colormap=None, color='gray')
+
+    if artists is not None:
+        for artist in artists:
+            ax.add_artist(artist)
     
-    xy_spagetti(ax, dataset, keys=keys, nkeys=300, show_saccades=show_saccades, keys_to_highlight=[], colormap=None, color='gray')
-    
-    post = patches.Circle( (0, 0), radius=0.009565, facecolor='black', edgecolor='none', alpha=1)
-    ax.add_artist(post)
-    
-    prep_xy_spagetti_for_saving(ax)
     fig.savefig('example_xy_spagetti_plot.pdf', format='pdf')
 
-def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=False, keys_to_highlight=[], colormap=None, color='gray', show_start=True):
+def example_colored_cartesian_spagetti(dataset, axis='xy', xlim=(-0.2, .2), ylim=(-0.75, .25), zlim=(-.15, -.15), keys=None, keys_to_highlight=[], show_saccades=False, colormap='jet', color_attribute='speed', norm=(0,0.5), artists=None):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    if axis=='xy': # xy plane
+        ax.set_ylim(ylim[0], ylim[1])
+        ax.set_xlim(xlim[0], xlim[1])
+        ax.set_autoscale_on(True)
+        ax.set_aspect('equal')
+        axes=[0,1]
+        cartesian_spagetti(ax, dataset, keys=keys, nkeys=100, start_key=0, axes=axes, show_saccades=show_saccades, keys_to_highlight=[], colormap=colormap, color_attribute=color_attribute, norm=norm, show_start=True)
+
+    if artists is not None:
+        for artist in artists:
+            ax.add_artist(artist)
+
+    #prep_cartesian_spagetti_for_saving(ax)
+    fpl.adjust_spines(ax, ['left', 'bottom'], xticks=[-.2, 0, .2], yticks=[-.75, -.5, -.25, 0, .25])
+    ax.set_xlabel('x axis, m')
+    ax.set_ylabel('y axis, m')
+    ax.set_title('mosquitoes, xy plot, color=speed from 0-0.5 m/s')
+
+    fig.set_size_inches(8,8)
+
+    fig.savefig('example_colored_xy_spagetti_plot.pdf', format='pdf')
+
+    return ax
+
+def cartesian_spagetti(ax, dataset, axes=[0,1], keys=None, nkeys=300, start_key=0, show_saccades=False, keys_to_highlight=[], colormap='jet', color='gray', color_attribute=None, norm=None, show_start=True):
     if keys is None:
         keys = dataset.trajecs.keys()
     else:
@@ -34,30 +64,25 @@ def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=Fa
     for key in keys:
         trajec = dataset.trajecs[key]    
         
-        '''
-        frame1 = tas.get_frame_at_distance(trajec, 0.2)
-        if trajec.frame_nearest_to_post <= frame1 or trajec.frame_nearest_to_post is None: 
-            continue
-        print key, trajec.xy_distance_to_post[frame1], trajec.xy_distance_to_post[trajec.frame_nearest_to_post]
-        try:
-            frames = np.arange(trajec.framerange[0], trajec.framerange[1])
-        except:
-            frames = np.arange(0, trajec.length)
-        '''
-        
-        frames = np.arange(trajec.framerange[0], trajec.frame_of_analysis_finished)
-        print trajec.framerange, trajec.frame_of_analysis_finished, trajec.frame_of_landing, trajec.frame_nearest_to_post
+        frames = np.arange(trajec.frame_range_roi[0], trajec.frame_range_roi[-1])
         
         if key in keys_to_highlight:
             alpha = 1
             linewidth = 1
             color = 'black'
             zorder = 500
-            ax.plot(trajec.positions[frames,0], trajec.positions[frames,1], '-', color='black', alpha=1, linewidth=linewidth, zorder=zorder)
+            ax.plot(trajec.positions[frames,axes[0]], trajec.positions[frames,axes[1]], '-', color='black', alpha=1, linewidth=linewidth, zorder=zorder)
         else:
+            alpha = 1
             linewidth = 0.5
+            color = color
             zorder = 100
-            ax.plot(trajec.positions[frames,0], trajec.positions[frames,1], '-', color=color, alpha=1, linewidth=linewidth, zorder=zorder)
+
+            if color_attribute is not None:
+                c = trajec.__getattribute__(color_attribute)                
+                fpl.colorline(ax,trajec.positions[frames,axes[0]], trajec.positions[frames,axes[1]], c[frames], colormap=colormap, linewidth=linewidth, alpha=alpha, zorder=zorder, norm=norm)
+            else:
+                ax.plot(trajec.positions[frames,axes[0]], trajec.positions[frames,axes[1]], '-', color=color, alpha=1, linewidth=linewidth, zorder=zorder)
             
         if show_saccades:
             if len(trajec.sac_ranges) > 0:
@@ -74,8 +99,8 @@ def xy_spagetti(ax, dataset, keys=None, nkeys=300, start_key=0, show_saccades=Fa
             ax.add_artist(start)
     
     
-def prep_xy_spagetti_for_saving(ax):
-    
+def prep_cartesian_spagetti_for_saving(ax):
+    fig.set_size_inches(fig_width,fig_height)
     rect = patches.Rectangle( [-.25, -.15], .5, .3, facecolor='none', edgecolor='gray', clip_on=False, linewidth=0.2)
     ax.add_artist(rect)
     
@@ -111,3 +136,4 @@ def prep_xy_spagetti_for_saving(ax):
     fig.subplots_adjust(bottom=margin, top=1-margin, right=1, left=0)
     ax.set_axis_off()
     
+    fpl.adjust_spines(ax, ['left', 'bottom'])
