@@ -42,9 +42,11 @@ class Dataset:
             fps = result_utils.get_fps(data_file)
         if dynamic_model is None:
             try:
-	        dyn_model = extra['dynamic_model_name']
+	            dyn_model = extra['dynamic_model_name']
             except:
-	        print 'cannot find dynamic model'
+                print 'cannot find dynamic model'
+                print 'using EKF mamarama, units: mm'
+                dyn_model = 'EKF mamarama, units: mm'
         if dynamic_model is not None:
             dyn_model = dynamic_model
 
@@ -62,13 +64,13 @@ class Dataset:
         # load object id's and save as Trajectory instances
         for obj_id in use_obj_ids:
             print 'processing: ', obj_id
-            if 1: #try: 
+            try: 
                 print obj_id
                 kalman_rows = ca.load_data( obj_id, data_file,
                                  dynamic_model_name = dyn_model,
                                  use_kalman_smoothing= kalman_smoothing,
                                  frames_per_second= fps)
-            else: #except:
+            except:
                 print 'object id failed to load (probably no data): ', obj_id
                 continue
 
@@ -132,13 +134,15 @@ class Trajectory(object):
         except:
             pass
             self.timestamp = None
-        self.time_fly = np.arange(0,self.length,1/self.fps) 
+        self.time_fly = np.arange(0,self.length/self.fps,1/self.fps) 
 
         self.positions = np.zeros([self.length, 3])
         self.velocities = np.zeros([self.length, 3])
         self.speed = np.zeros([self.length])
         self.speed_xy = np.zeros([self.length])
         self.length = len(self.speed)
+        self.cull = False
+        self.frame_range_roi = (0, self.length)
 
         for i in range(len(kalman_rows)):
             for j in range(3):
@@ -343,6 +347,7 @@ def make_dataset_with_attribute_filter(dataset, attr, val):
     for key in keys:
         new_dataset.trajecs.setdefault(key, dataset.trajecs[key])
     return new_dataset        
+
 
 ###################################################################################################
 # Example usage
