@@ -20,6 +20,10 @@ def mark_for_culling_based_on_min_frames(trajec, min_length_frames=10):
 def mark_for_culling_based_on_cartesian_position(trajec, ok_range, axis=0):
     if np.max(trajec.positions[:,axis]) > np.max(ok_range) or np.min(trajec.positions[:,axis]) < np.min(ok_range):
         trajec.cull = True
+        
+def mark_for_culling_based_on_speed(trajec, min_speed, axis=0):
+    if np.min(trajec.speed) < min_speed:
+        trajec.cull = True
          
 
 ########################################################################################################

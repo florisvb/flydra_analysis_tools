@@ -9,6 +9,7 @@ import numpy as np
 import pickle
 import sys
 import os
+import time
 
 try:
     import flydra.a2.core_analysis as core_analysis
@@ -76,7 +77,7 @@ class Dataset:
 
             # couple object ID dictionary with trajectory objects
             trajec_id = str(obj_id) # this is not necessarily redundant with the obj_id, it allows for making a unique trajectory id when merging multiple datasets
-            tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance)
+            tmp = Trajectory(trajec_id, kalman_rows, info=info, fps=fps, save_covariance=save_covariance, extra=extra)
             self.trajecs.setdefault(trajec_id, tmp)
             
         return
@@ -89,7 +90,7 @@ class Dataset:
         return self.trajecs[key]
 
 class Trajectory(object):
-    def __init__(self, trajec_id, kalman_rows=None, info={}, fps=None, save_covariance=False):
+    def __init__(self, trajec_id, kalman_rows=None, info={}, fps=None, save_covariance=False, extra=None):
         self.key = trajec_id
         
         if kalman_rows is None:
@@ -126,16 +127,13 @@ class Trajectory(object):
         self.fps = float(fps)
         self.length = len(kalman_rows)
 
-	#print 'time'
-	#print extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
-		
-        try:
-            self.timestamp = time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
-        except:
-            pass
-            self.timestamp = None
-        self.time_fly = np.arange(0,self.length/self.fps,1/self.fps) 
+        print 'local time: ', time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
+        print 'epochtime: ', extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
 
+        self.timestamp_local = time.strftime( '%Y%m%d_%H%M%S', time.localtime(extra['time_model'].framestamp2timestamp(kalman_rows[0][1])) )
+        self.timestamp_epoch = extra['time_model'].framestamp2timestamp(kalman_rows[0][1])
+
+        self.time_fly = np.arange(0,self.length/self.fps,1/self.fps) 
         self.positions = np.zeros([self.length, 3])
         self.velocities = np.zeros([self.length, 3])
         self.speed = np.zeros([self.length])
@@ -253,6 +251,23 @@ def count_flies(dataset, attr=None, val=None):
                 count_for_attribute(a, val[i])
         else:
             count_for_attribute(attr, val)
+            
+def get_basic_statistics(dataset):
+    
+    n_flies = 0
+    mean_speeds = []
+    frame_length = []
+    for k, trajec in dataset.trajecs.items():
+        n_flies += 1
+        mean_speeds.append( np.mean(trajec.speed) )
+        frame_length.append( len(trajec.speed) )
+        
+    mean_speeds = np.array(mean_speeds)
+    frame_length = np.array(frame_length)
+        
+    print 'num flies: ', n_flies
+    print 'mean speed: ', np.mean(mean_speeds)
+    print 'mean frame length: ', np.mean(frame_length)
             
 def load_single_h5(filename, save_as=None, save_dataset=True, return_dataset=True, kalman_smoothing=True, save_covariance=False, info={}):
     # filename should be a .h5 file

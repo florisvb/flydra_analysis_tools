@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home/caveman/src/floris_functions')
 import floris_plot_lib as fpl
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,8 +33,11 @@ def example_colored_cartesian_spagetti(dataset, axis='xy', xlim=(-0.2, .2), ylim
         ax.set_autoscale_on(True)
         ax.set_aspect('equal')
         axes=[0,1]
-        cartesian_spagetti(ax, dataset, keys=keys, nkeys=100, start_key=0, axes=axes, show_saccades=show_saccades, keys_to_highlight=[], colormap=colormap, color_attribute=color_attribute, norm=norm, show_start=True)
-
+        cartesian_spagetti(ax, dataset, keys=keys, nkeys=300, start_key=0, axes=axes, show_saccades=show_saccades, keys_to_highlight=[], colormap=colormap, color_attribute=color_attribute, norm=norm, show_start=False)
+        
+    post = patches.Circle( (0, 0), radius=0.01, facecolor='black', edgecolor='none', alpha=1)
+    artists = [post]
+    
     if artists is not None:
         for artist in artists:
             ax.add_artist(artist)
@@ -41,7 +46,7 @@ def example_colored_cartesian_spagetti(dataset, axis='xy', xlim=(-0.2, .2), ylim
     fpl.adjust_spines(ax, ['left', 'bottom'], xticks=[-.2, 0, .2], yticks=[-.75, -.5, -.25, 0, .25])
     ax.set_xlabel('x axis, m')
     ax.set_ylabel('y axis, m')
-    ax.set_title('mosquitoes, xy plot, color=speed from 0-0.5 m/s')
+    ax.set_title('xy plot, color=speed from 0-0.5 m/s')
 
     fig.set_size_inches(8,8)
 
@@ -139,5 +144,121 @@ def prep_cartesian_spagetti_for_saving(ax):
     fpl.adjust_spines(ax, ['left', 'bottom'])
 
 
+
+
+###############
+
+def heatmap(ax, dataset, axis='xy'):  
+
+    # collect data
+    xpos = np.array([])
+    ypos = np.array([])
+    zpos = np.array([])
+    
+    for key, trajec in dataset.trajecs.items():
+        xpos = np.hstack( (xpos, trajec.positions[:,0]) )
+        ypos = np.hstack( (ypos, trajec.positions[:,1]) )
+        zpos = np.hstack( (zpos, trajec.positions[:,2]) )
+    
+    if axis == 'xy':
+        fpl.histogram2d(ax, xpos, ypos, bins=100, logcolorscale=True)
+    elif axis == 'xz':
+        fpl.histogram2d(ax, xpos, zpos, bins=100, logcolorscale=True)
+    elif axis == 'yz':
+        fpl.histogram2d(ax, ypos, zpos, bins=100, logcolorscale=True)
+    
+    if axis == 'xy':
+        post = patches.Circle( (0, 0), radius=0.01, facecolor='black', edgecolor='none', alpha=1, linewidth=0)
+    elif axis == 'yz':
+        post = patches.Rectangle( (-.01,0), width=0.02, facecolor='black', height=.16, edgecolor='none', alpha=1, linewidth=0)
+    artists = [post]
+    
+    if artists is not None:
+        for artist in artists:
+            ax.add_artist(artist)
+    
+    if 'x' in axis:
+        xticks = [-0.15, 0, 0.15]
+    else:
+        xticks = None
+        
+    if 'z' in axis:
+        yticks = [0, .15, .30]
+    else:
+        yticks = None
+        
+    if axis == 'xy':
+        ax.set_xlim(-.15, .15)
+        ax.set_ylim(.2,-.8)
+        
+    fpl.adjust_spines(ax, ['left', 'bottom'], xticks=xticks, yticks=yticks)
+    
+    ax.set_aspect('equal')
+    
+
+
+def show_start_stop(dataset):
+    
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    artists = []
+    
+    xpos = []
+    ypos = []
+    
+    for key, trajec in dataset.trajecs.items():
+        if 1:
+            x = trajec.positions[0,0]
+            y = trajec.positions[0,1]
+            start = patches.Circle( (x, y), radius=0.003, facecolor='green', edgecolor='none', alpha=1, linewidth=0)
+            x = trajec.positions[-1,0]
+            y = trajec.positions[-1,1]
+            stop = patches.Circle( (x, y), radius=0.003, facecolor='red', edgecolor='none', alpha=1, linewidth=0)
+            
+            #artists.append(start)
+            artists.append(stop)
+        if 0:
+            xpos.append(trajec.positions[-1,0])
+            ypos.append(trajec.positions[-1,1])
+        
+    if 1:
+        for artist in artists:
+            ax.add_artist(artist)
+            
+        
+    #fpl.histogram2d(ax, np.array(xpos), np.array(ypos), bins=100, logcolorscale=True, xextent=[-.2,.2], yextent=[-.75,.25])
+        
+    ax.set_aspect('equal')
+        
+    fpl.adjust_spines(ax, ['left', 'bottom'], xticks=[-.2, 0, .2], yticks=[-.75, -.5, -.25, 0, .25])
+    ax.set_xlabel('x axis, m')
+    ax.set_ylabel('y axis, m')
+    ax.set_title('xy plot, color=speed from 0-0.5 m/s')
+
+    fig.set_size_inches(8,8)
+    
+    
+    fig.savefig('start_stop.pdf', format='pdf')
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 
